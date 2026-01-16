@@ -1,7 +1,7 @@
 # AccountPlayed 
 Simple WoW addon to track and display /played time. sorting by class across all realms.
 
-![CurseForge Downloads](https://img.shields.io/curseforge/dt/1426046?style=for-the-badge&color=green)
+[![CurseForge Downloads](https://img.shields.io/curseforge/dt/1426046?style=for-the-badge&color=green)](https://www.curseforge.com/wow/addons/account-played)
 
 <img width="534" height="389" alt="image" src="https://github.com/user-attachments/assets/8bb04d03-74ae-418f-9950-527791d880e0" />
 
