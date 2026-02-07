@@ -10,13 +10,10 @@ Features:
 - sorted by (class/total account /played) as a percentage
 - small popup ui (resize, drag, move, and scroll as you please!)
 - minimap button to toggle ui.
-- (NEW) Hover over classes to get a popup of all the characters making up the playtime.
+- (NEW) Hover over classes to get a popup of all characters making up the playtime.
 - (NEW) Button to Toggle between Years/Days or Hours/Min
-- (NEW) press escape to close window
-- (Planned/Incomplete) Document and publish helper functions so other addons can access AccountPlayedDB safley.
+- (NEW) Press escape to close window
 - (Planned/Incomplete) Localized strings to support other languages. 
-- (Planned/Incomplete) Right click on minimap icon to hide any playtime info and only display the class differences. 
-- (Future Plans) Small patches, bug fixes, and maintainece.
 
 Usage:
 - `/apclasswin` - open/close account played window (OR use minimap button)

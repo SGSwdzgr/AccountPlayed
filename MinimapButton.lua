@@ -10,6 +10,13 @@ local AP = AccountPlayed
 
 local BUTTON_NAME = "AccountPlayed_MinimapButton"
 
+-- Localization (Define the table with your localized strings)
+local L = {
+    TOOLTIP_TITLE = "Account Played",
+    TOOLTIP_CLICK = "Left Click: Toggle window",
+    TOOLTIP_DRAG = "Drag: Move icon",
+}
+
 -- Migrate from old angle-only format or initialize defaults.
 local function InitDB()
     if not AccountPlayedMinimapDB then
@@ -40,6 +47,7 @@ local function UpdateButtonPosition(button)
     local y = AccountPlayedMinimapDB.y or 0
     button:ClearAllPoints()
     button:SetPoint("CENTER", Minimap, "CENTER", x, y)
+    -- print("Button Position Updated: x = " .. x .. ", y = " .. y)  -- Debugging line
 end
 
 -- Save the button's current position as an offset from Minimap center
@@ -52,7 +60,7 @@ local function SaveButtonPosition(button)
     end
 end
 
--- Drag position update (defined once to avoid memory leak)
+-- Drag position update 
 local function UpdateDragPosition(self)
     local mx, my = Minimap:GetCenter()
     local cx, cy = GetCursorPosition()
@@ -86,6 +94,9 @@ local function CreateMinimapButton()
     btn:RegisterForDrag("LeftButton")
     btn:SetClampedToScreen(true)
 
+    -- Debugging line to check if the button is created
+    --print("Button Created")
+
     -- Tooltip and Click Handlers
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
@@ -102,6 +113,29 @@ local function CreateMinimapButton()
         SlashCmdList.ACCOUNTPLAYEDPOPUP()
     end)
 
+    -- Border (OVERLAY, positioned first)
+    btn.border = btn:CreateTexture(nil, "OVERLAY")
+    btn.border:SetSize(53, 53)
+    btn.border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    btn.border:SetPoint("TOPLEFT")
+
+    -- Icon (ARTWORK layer, smaller size)
+    btn.icon = btn:CreateTexture(nil, "ARTWORK")
+    btn.icon:SetSize(17, 17)
+    btn.icon:SetTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")  
+    btn.icon:SetPoint("CENTER")
+    btn.icon:SetTexCoord(0.05, 0.95, 0.05, 0.95)
+
+    -- Check if the texture is loaded correctly
+    -- if not btn.icon:GetTexture() then
+    --     print("Error: Icon texture not loaded!")
+    -- else
+    --     print("Icon texture loaded successfully.")
+    -- end
+
+    -- Highlight
+    btn:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
+
     -- Drag handlers
     btn:SetScript("OnDragStart", function(self)
         self.isDragging = true
@@ -113,6 +147,9 @@ local function CreateMinimapButton()
             cx, cy = cx / scale, cy / scale
             local dx, dy = cx - mx, cy - my
             local dist = (dx * dx + dy * dy) ^ 0.5
+
+            -- Define the RADIUS_ADJUST constant here
+            local RADIUS_ADJUST = -5  -- Adjust the snap zone radius (negative makes it tighter)
 
             -- Determine snap behavior
             local edgeRadius = (minimap:GetWidth() + self:GetWidth()) / 2
