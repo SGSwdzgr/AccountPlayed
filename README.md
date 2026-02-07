@@ -3,7 +3,8 @@ Simple WoW addon to track and display /played time. sorting by class across all 
 
 [![CurseForge Downloads](https://img.shields.io/curseforge/dt/1426046?style=for-the-badge&color=green)](https://www.curseforge.com/wow/addons/account-played)
 
-<img width="534" height="389" alt="image" src="https://github.com/user-attachments/assets/8bb04d03-74ae-418f-9950-527791d880e0" />
+<img width="791" height="339" alt="image" src="https://github.com/user-attachments/assets/dda71859-7138-45f5-91b9-e8bc22eaa8cc" />
+
 
 Features:
 - View your accounts top played time by class
@@ -44,7 +45,8 @@ just build 1.0.0 "Commit Message for Tagged release"
 
 ### Honorable Mentions:
 HUGE Thank you to everyone in [Seems Good](https://seemsgood.org) for testing and motivating to publish and share with others.
-Pip - Original idea to share time played and compare with other guildies.
-Whare - WoW api help and debugging
-[WOWHEAD](https://www.wowhead.com/news/find-your-favorite-class-with-account-played-380300) - Huge thanks for promoting the addon!! seeing all the screenshots shared online is surreal to say the least.
-[r/wow](https://www.reddit.com/r/wow/comments/1quo3h0/account_played_track_and_display_your_characters/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) - All the great feedback like missing documentation on slashcommands, bugs with missing minimap, and screenshots shared (:
+- Pip: Original idea to share time played and compare with other guildies.
+- Whare: WoW api help and debugging
+- Amadeus: Minimap fix to support all ui layouts, padding with class names, and better fomatting
+- [WOWHEAD](https://www.wowhead.com/news/find-your-favorite-class-with-account-played-380300) - Huge thanks for promoting the addon!! seeing all the screenshots shared online is surreal to say the least.
+- [r/wow](https://www.reddit.com/r/wow/comments/1quo3h0/account_played_track_and_display_your_characters/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button) - All the great feedback like missing documentation on slashcommands, bugs with missing minimap, and screenshots shared (:
