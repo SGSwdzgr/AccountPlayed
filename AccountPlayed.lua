@@ -6,7 +6,7 @@
 AccountPlayed = AccountPlayed or {}
 local AP = AccountPlayed
 
--- SavedVariables (must NOT be local)
+-- SavedVariables (must NOT be local to use in MinimapButton.lua)
 AccountPlayedDB = AccountPlayedDB or {}
 AccountPlayedPopupDB = AccountPlayedPopupDB or {
     width = 520,
@@ -37,7 +37,7 @@ AP.popupFrame = nil
 AP.popupRows = {}
 
 -- API Version
-AccountPlayed.API_VERSION = 1
+-- AccountPlayed.API_VERSION = 1
 
 --------------------------------------------------
 -- Validation
@@ -159,127 +159,6 @@ local function SafeRequestTimePlayed()
         return true
     end
     return false
-end
-
---------------------------------------------------
--- Public API for Other Addons
---------------------------------------------------
-
---[[
-    Get playtime for a specific character
-    
-    @param realm string - Realm name (normalized)
-    @param name string - Character name
-    @return time number - Seconds played (or nil if not found)
-    @return class string - Class file name (or nil if not found)
-    
-    Example:
-        local time, class = AccountPlayed:GetCharacterTime("MyRealm", "MyChar")
-        if time then
-            print(string.format("%s has played for %d hours", "MyChar", time/3600))
-        end
-]]
-function AccountPlayed:GetCharacterTime(realm, name)
-    local charKey = realm .. "-" .. name
-    local data = AccountPlayedDB[charKey]
-    
-    if data and type(data) == "table" and data.time then
-        return data.time, data.class
-    end
-    return nil
-end
-
---[[
-    Get total playtime across all characters on account
-    
-    @return total number - Total seconds played across all characters
-    
-    Example:
-        local total = AccountPlayed:GetAccountTotal()
-        print(string.format("Account total: %.1f days", total/86400))
-]]
-function AccountPlayed:GetAccountTotal()
-    return GetAccountTotal()
-end
-
---[[
-    Get total playtime by class
-    
-    @return totals table - Table mapping class names to seconds played
-    @return accountTotal number - Total seconds across all classes
-    
-    Example:
-        local classTotals, total = AccountPlayed:GetClassTotals()
-        for class, time in pairs(classTotals) do
-            print(string.format("%s: %.1f hours", class, time/3600))
-        end
-]]
-function AccountPlayed:GetClassTotals()
-    return GetClassTotals()
-end
-
---[[
-    Get a copy of all character data
-    Returns a COPY not a reference, so modifications won't affect the database
-    
-    @return characters table - Copy of all character data
-    
-    Example:
-        local chars = AccountPlayed:GetAllCharacters()
-        for charKey, data in pairs(chars) do
-            print(string.format("%s: %s - %.1f hours", 
-                charKey, data.class, data.time/3600))
-        end
-]]
-function AccountPlayed:GetAllCharacters()
-    local copy = {}
-    for charKey, data in pairs(AccountPlayedDB) do
-        if type(data) == "table" and data.time then
-            copy[charKey] = {
-                time = data.time,
-                class = data.class
-            }
-        end
-    end
-    return copy
-end
-
---[[
-    Check if AccountPlayed has loaded and has data
-    Useful for other addons to check before trying to read data
-    
-    @return loaded boolean - True if addon has initialized
-    @return hasData boolean - True if database contains any character data
-    
-    Example:
-        local loaded, hasData = AccountPlayed:IsReady()
-        if loaded and hasData then
-            -- Safe to read data
-        end
-]]
-function AccountPlayed:IsReady()
-    local hasData = false
-    for _ in pairs(AccountPlayedDB) do
-        hasData = true
-        break
-    end
-    return true, hasData
-end
-
---[[
-    Get formatted time string
-    Useful for other addons to display time consistently
-    
-    @param seconds number - Time in seconds
-    @param useYears boolean - Use years/days format if true, hours/minutes if false
-    @return formatted string - Formatted time string
-    
-    Example:
-        local str = AccountPlayed:FormatTime(86400, false)
-        -- Returns: "24h 0m"
-]]
-function AccountPlayed:FormatTime(seconds, useYears)
-    return FormatTimeSmart(seconds, useYears)
 end
 
 --------------------------------------------------
