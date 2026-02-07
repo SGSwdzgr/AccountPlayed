@@ -15,6 +15,8 @@ addon_name := "AccountPlayed"
 # DEFAULT PATHS 
 retail_path := "/home/jg/Games/battlenet/drive_c/Program Files (x86)/World of Warcraft/_retail_/Interface/AddOns"
 beta_path := "/home/jg/Games/battlenet/drive_c/Program Files (x86)/World of Warcraft/_beta_/Interface/AddOns"
+classic_path := "/home/jg/Games/battlenet/drive_c/Program Files (x86)/World of Warcraft/_classic_era_/Interface/AddOns"
+
 # ADDON FILES (.lua .toc etc..)
 files := "AccountPlayed.lua MinimapButton.lua AccountPlayed.toc"
 
@@ -30,16 +32,22 @@ sync-beta:
 sync-retail:
   @just sync retail
 
+# sync local dir with classic_era path
+sync-classic:
+  @just sync classic
+
 sync-all:
   @just sync-retail
   @just sync-beta
+  @just sync classic
 
 # sync local files with addon dir
 # usage: just sync beta | just sync retail
+
 sync target:
-  mkdir -p "{{ if target == "beta" { beta_path } else { retail_path } }}/{{ addon_name }}"
-  cp {{ files }} "{{ if target == "beta" { beta_path } else { retail_path } }}/{{ addon_name }}"
-  ls -larth "{{ if target == "beta" { beta_path } else { retail_path } }}/{{ addon_name }}"
+  mkdir -p "{{ if target == 'beta' { beta_path } else if target == 'classic' { classic_path } else { retail_path } }}/{{ addon_name }}"
+  cp {{ files }} "{{ if target == 'beta' { beta_path } else if target == 'classic' { classic_path } else { retail_path } }}/{{ addon_name }}"
+  ls -larth "{{ if target == 'beta' { beta_path } else if target == 'classic' { classic_path } else { retail_path } }}/{{ addon_name }}"
   @echo "Done! /rl to see changes in game."
 
 # remove beta addon (keeps local files)
@@ -50,8 +58,14 @@ rm-beta:
 rm-retail:
   @just rm retail
 
+# remove classic addon (keeps local files)
+rm-classic:
+  @just rm classic
+
+
+
 rm target:
-  rm -rf "{{ if target == "beta" { beta_path } else { retail_path } }}/{{ addon_name }}"
+  rm -rf "{{ if target == "beta" { beta_path } else if target == "classic" { classic_path } else { retail_path } }}/{{ addon_name }}"
 
 # list beta dir with changes 
 ls-beta:
@@ -61,9 +75,13 @@ ls-beta:
 ls-retail:
   @just ls retail
 
+# list classic dir with changes 
+ls-classic:
+  @just ls classic
+
 # list _path showing recent changes
 ls target:
-  ls -larth "{{ if target == "beta" { beta_path } else { retail_path } }}/{{ addon_name }}"
+  ls -larth "{{ if target == "beta" { beta_path } else if target == "classic" { classic_path } else { retail_path } }}/{{ addon_name }}"
 
 # git ci for packager
 # example: just build 1.0.0 "some message here"
