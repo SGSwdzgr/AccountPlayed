@@ -3,7 +3,6 @@
 --   - Snaps to minimap edge when close (works with round minimap)
 --   - Breaks free for arbitrary positioning (works with square minimap / ElvUI)
 --   - Saves x,y offset relative to Minimap center between sessions
---   - Fade button to hidden when not moused over minimap
 
 -- Addon namespace
 AccountPlayed = AccountPlayed or {}
@@ -16,6 +15,9 @@ local L = {
     TOOLTIP_TITLE = "Account Played",
     TOOLTIP_CLICK = "Left Click: Toggle window",
     TOOLTIP_DRAG = "Drag: Move icon",
+    TOOLTIP_LOCK = "Right Click: Lock/Unlock position",
+    TOOLTIP_LOCKED = "|cffff0000[LOCKED]|r",
+    TOOLTIP_UNLOCKED = "|cff00ff00[UNLOCKED]|r",
 }
 
 -- Migrate from old angle-only format or initialize defaults.
@@ -39,6 +41,11 @@ local function InitDB()
         local radius = 105
         AccountPlayedMinimapDB.x = math.cos(angle) * radius
         AccountPlayedMinimapDB.y = math.sin(angle) * radius
+    end
+    
+    -- Default locked state
+    if AccountPlayedMinimapDB.locked == nil then
+        AccountPlayedMinimapDB.locked = false
     end
 end
 
@@ -109,10 +116,10 @@ local function CreateMinimapButton()
     btn:SetFrameLevel(8)
     btn:SetMovable(true)
     btn:EnableMouse(true)
-    btn:RegisterForClicks("LeftButtonUp")
+    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     btn:RegisterForDrag("LeftButton")
     btn:SetClampedToScreen(true)
-    btn:SetAlpha(0.2)  -- Start faded out
+    btn:SetAlpha(0.01)  -- Start faded out
 
     -- Debugging line to check if the button is created
     --print("Button Created")
@@ -120,39 +127,69 @@ local function CreateMinimapButton()
     -- Tooltip and Click Handlers
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(L.TOOLTIP_TITLE, 1, 1, 1)
-        GameTooltip:AddLine(L.TOOLTIP_CLICK, 0.8, 0.8, 0.8)
-        GameTooltip:AddLine(L.TOOLTIP_DRAG, 0.8, 0.8, 0.8)
+        GameTooltip:AddLine(L.TOOLTIP_TITLE, 0.4, 0.78, 1)  -- Light blue title
+        GameTooltip:AddLine(" ")  -- Spacer
+        GameTooltip:AddDoubleLine("|cffffffffLeft Click:|r", "|cff00ff00Toggle window|r")
+        if not AccountPlayedMinimapDB.locked then
+            GameTooltip:AddDoubleLine("|cffffffffDrag:|r", "|cffffff00Move icon|r")
+        end
+        GameTooltip:AddDoubleLine("|cffffffffRight Click:|r", "|cffff8800Lock/Unlock position|r")
+        GameTooltip:AddLine(" ")  -- Spacer
+        GameTooltip:AddLine(AccountPlayedMinimapDB.locked and L.TOOLTIP_LOCKED or L.TOOLTIP_UNLOCKED, 1, 1, 1)
         GameTooltip:Show()
     end)
     btn:SetScript("OnLeave", function()
         GameTooltip:Hide()
     end)
-    btn:SetScript("OnClick", function()
-        PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-        SlashCmdList.ACCOUNTPLAYEDPOPUP()
+    btn:SetScript("OnClick", function(self, button)
+        if button == "LeftButton" then
+            PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
+            SlashCmdList.ACCOUNTPLAYEDPOPUP()
+        elseif button == "RightButton" then
+            AccountPlayedMinimapDB.locked = not AccountPlayedMinimapDB.locked
+            PlaySound(AccountPlayedMinimapDB.locked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
+            print("|cff00ff00Account Played:|r Minimap button " .. (AccountPlayedMinimapDB.locked and "|cffff0000LOCKED|r" or "|cff00ff00UNLOCKED|r"))
+            
+            -- Update tooltip if it's showing
+            if GameTooltip:GetOwner() == self then
+                self:GetScript("OnEnter")(self)
+            end
+        end
     end)
 
     -- Track minimap mouse state for fade in/out (only when snapped)
     local minimapHoverFrame = CreateFrame("Frame")
-    minimapHoverFrame:SetScript("OnUpdate", function(self)
+    minimapHoverFrame.checkInterval = 0.2  -- Check every 0.1 seconds instead of every frame
+    minimapHoverFrame.elapsed = 0
+    minimapHoverFrame.lastMouseOver = false
+    
+    minimapHoverFrame:SetScript("OnUpdate", function(self, elapsed)
         if btn.isDragging then return end  -- Don't fade while dragging
+        
+        self.elapsed = self.elapsed + elapsed
+        if self.elapsed < self.checkInterval then
+            return
+        end
+        self.elapsed = 0
         
         -- Only auto-hide if button is snapped to minimap
         if btn.snapped then
-            if Minimap:IsMouseOver(60, -60, -60, 60) then
-                if btn:GetAlpha() < 1 then
+            local isMouseOver = Minimap:IsMouseOver(60, -60, -60, 60)
+            
+            -- Only fade if mouse state changed
+            if isMouseOver ~= self.lastMouseOver then
+                self.lastMouseOver = isMouseOver
+                if isMouseOver then
                     FadeButton(btn, 1, 0.15)
-                end
-            else
-                if btn:GetAlpha() > 0.01 then -- setting alpa to 0 gave state bug so we fake it here.
+                else
                     FadeButton(btn, 0.01, 0.15)
                 end
             end
         else
-            -- When not snapped, always show at full opacity
-            if btn:GetAlpha() < 1 then
+            -- When not snapped, always show at full opacity (only if needed)
+            if btn:GetAlpha() < 0.99 then
                 FadeButton(btn, 1, 0.15)
+                self.lastMouseOver = true
             end
         end
     end)
@@ -182,6 +219,11 @@ local function CreateMinimapButton()
 
     -- Drag handlers
     btn:SetScript("OnDragStart", function(self)
+        if AccountPlayedMinimapDB.locked then
+            print("|cff00ff00Account Played:|r Button is locked. Right-click to unlock.")
+            return
+        end
+        
         self.isDragging = true
         self:SetScript("OnUpdate", function(self)
             local minimap = Minimap
@@ -240,7 +282,6 @@ local function CreateMinimapButton()
 
     UpdateButtonPosition(btn)
 end
-
 
 -- Slash command to reset button position
 SLASH_ACCOUNTPLAYEDRESETMAP1 = "/apresetmap"
