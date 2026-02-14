@@ -10,5 +10,6 @@
 ## X-Curse-Project-ID: 1426046
 ## X-Wago-ID: ZKxZYoNk
 
+Localization.lua
 AccountPlayed.lua
 MinimapButton.lua

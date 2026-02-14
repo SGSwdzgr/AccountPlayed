@@ -4,21 +4,16 @@
 --   - Breaks free for arbitrary positioning (works with square minimap / ElvUI)
 --   - Saves x,y offset relative to Minimap center between sessions
 
+local _, addonTable = ...
+local L = addonTable.L
+
 -- Addon namespace
 AccountPlayed = AccountPlayed or {}
 local AP = AccountPlayed
 
 local BUTTON_NAME = "AccountPlayed_MinimapButton"
 
--- Localization (Define the table with your localized strings)
-local L = {
-    TOOLTIP_TITLE = "Account Played",
-    TOOLTIP_CLICK = "Left Click: Toggle window",
-    TOOLTIP_DRAG = "Drag: Move icon",
-    TOOLTIP_LOCK = "Right Click: Lock/Unlock position",
-    TOOLTIP_LOCKED = "|cffff0000[LOCKED]|r",
-    TOOLTIP_UNLOCKED = "|cff00ff00[UNLOCKED]|r",
-}
+-- [REMOVED] Old local L table was here. Now using addonTable.L
 
 -- Migrate from old angle-only format or initialize defaults.
 local function InitDB()
@@ -127,15 +122,20 @@ local function CreateMinimapButton()
     -- Tooltip and Click Handlers
     btn:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(L.TOOLTIP_TITLE, 0.4, 0.78, 1)  -- Light blue title
+        GameTooltip:AddLine(L["TOOLTIP_TITLE"], 0.4, 0.78, 1)  -- Light blue title
         GameTooltip:AddLine(" ")  -- Spacer
-        GameTooltip:AddDoubleLine("|cffffffffLeft Click:|r", "|cff00ff00Toggle window|r")
+        GameTooltip:AddDoubleLine("|cffffffff" .. L["TOOLTIP_LEFT_CLICK"] .. "|r", "|cff00ff00" .. L["TOOLTIP_TOGGLE_WINDOW"] .. "|r")
         if not AccountPlayedMinimapDB.locked then
-            GameTooltip:AddDoubleLine("|cffffffffDrag:|r", "|cffffff00Move icon|r")
+            GameTooltip:AddDoubleLine("|cffffffff" .. L["TOOLTIP_DRAG_MOVE"] .. "|r", "|cffffff00" .. L["TOOLTIP_MOVE_ICON"] .. "|r")
         end
-        GameTooltip:AddDoubleLine("|cffffffffRight Click:|r", "|cffff8800Lock/Unlock position|r")
+        GameTooltip:AddDoubleLine("|cffffffff" .. L["TOOLTIP_RIGHT_CLICK"] .. "|r", "|cffff8800" .. L["TOOLTIP_LOCK_UNLOCK"] .. "|r")
         GameTooltip:AddLine(" ")  -- Spacer
-        GameTooltip:AddLine(AccountPlayedMinimapDB.locked and L.TOOLTIP_LOCKED or L.TOOLTIP_UNLOCKED, 1, 1, 1)
+        if AccountPlayedMinimapDB.locked then
+            statusText = "|cffff0000[" .. L["STATUS_LOCKED"] .. "]|r"
+        else
+            statusText = "|cff00ff00[" .. L["STATUS_UNLOCKED"] .. "]|r"
+        end
+        GameTooltip:AddLine(statusText, 1, 1, 1)
         GameTooltip:Show()
     end)
     btn:SetScript("OnLeave", function()
@@ -148,7 +148,8 @@ local function CreateMinimapButton()
         elseif button == "RightButton" then
             AccountPlayedMinimapDB.locked = not AccountPlayedMinimapDB.locked
             PlaySound(AccountPlayedMinimapDB.locked and SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON or SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF)
-            print("|cff00ff00Account Played:|r Minimap button " .. (AccountPlayedMinimapDB.locked and "|cffff0000LOCKED|r" or "|cff00ff00UNLOCKED|r"))
+            local statusStr = AccountPlayedMinimapDB.locked and ("|cffff0000" .. L["STATUS_LOCKED"] .. "|r") or ("|cff00ff00" .. L["STATUS_UNLOCKED"] .. "|r")
+            print("|cff00ff00Account Played:|r " .. string.format(L["MSG_BUTTON_STATUS"], statusStr))
             
             -- Update tooltip if it's showing
             if GameTooltip:GetOwner() == self then
@@ -220,7 +221,7 @@ local function CreateMinimapButton()
     -- Drag handlers
     btn:SetScript("OnDragStart", function(self)
         if AccountPlayedMinimapDB.locked then
-            print("|cff00ff00Account Played:|r Button is locked. Right-click to unlock.")
+            print("|cff00ff00Account Played:|r " .. L["MSG_BUTTON_LOCKED"])
             return
         end
         
@@ -298,9 +299,9 @@ SlashCmdList.ACCOUNTPLAYEDRESETMAP = function()
         btn.snapped = true  -- Reset snap state
         UpdateButtonPosition(btn)
         FadeButton(btn, 1, 0.15)  -- Make it visible
-        print("|cff00ff00Account Played:|r Minimap button position reset to default.")
+        print("|cff00ff00Account Played:|r " .. L["MSG_RESET_SUCCESS"])
     else
-        print("|cff00ff00Account Played:|r Minimap button will appear at default position on next login.")
+        print("|cff00ff00Account Played:|r " .. L["MSG_RESET_NEXT"])
     end
 end
 

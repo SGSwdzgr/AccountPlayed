@@ -1,6 +1,8 @@
 --------------------------------------------------
 -- Account Played - Main Module
 --------------------------------------------------
+local _, addonTable = ...
+local L = addonTable.L
 
 AccountPlayed = AccountPlayed or {}
 local AP = AccountPlayed
@@ -16,15 +18,6 @@ AccountPlayedPopupDB = AccountPlayedPopupDB or {
     useYears = false,
 }
 
--- Localization
-local L = {
-    ADDON_NAME = "Account Played",
-    WINDOW_TITLE = "Account Played - Time by Class",
-    NO_DATA = "No data yet",
-    TOTAL = "TOTAL: ",
-    DEBUG_HEADER = "[AccountPlayed Debug] Known characters:",
-}
-
 -- Throttle tracking
 local lastPlayedRequest = 0
 
@@ -38,7 +31,7 @@ AP.popupRows = {}
 --------------------------------------------------
 
 if type(AccountPlayedDB) ~= "table" then
-    print("|cffff0000Account Played: SavedVariables corrupted, resetting!|r")
+    print("|cffff0000" .. L["DB_CORRUPTED"] .. "|r")
     AccountPlayedDB = {}
 end
 
@@ -64,6 +57,13 @@ local function GetCharKey(realm, name)
     return realm .. "-" .. name
 end
 
+local function GetLocalizedClass(classFile)
+    if not classFile or classFile == "UNKNOWN" then 
+        return L["UNKNOWN"] or "Unknown"
+    end
+    return LOCALIZED_CLASS_NAMES_MALE[classFile] or classFile
+end
+
 local function SafeRequestTimePlayed()
     local now = GetTime()
     if now - lastPlayedRequest >= 10 then
@@ -83,7 +83,7 @@ local function FormatTime(seconds)
     local hours = math.floor(seconds / 3600)
     local days = math.floor(hours / 24)
     local remHours = hours % 24
-    return string.format("%dd %dh", days, remHours)
+    return string.format("%d%s %d%s", days, L["TIME_UNIT_DAY"], remHours, L["TIME_UNIT_HOUR"])
 end
 
 local function FormatTimeSmart(seconds, useYears)
@@ -93,9 +93,9 @@ local function FormatTimeSmart(seconds, useYears)
     if useYears then
         local totalHours = math.floor(hours)
         local days = math.floor(totalHours / 24)
-        return days > 0 and string.format("%dd", days) or string.format("%dh", totalHours)
+        return days > 0 and string.format("%d%s", days, L["TIME_UNIT_DAY"]) or string.format("%d%s", totalHours, L["TIME_UNIT_HOUR"])
     else
-        return string.format("%dh", math.floor(hours))
+        return string.format("%d%s", math.floor(hours), L["TIME_UNIT_HOUR"])
     end
 end
 
@@ -107,11 +107,11 @@ local function FormatTimeDetailed(seconds, useYears)
         local totalHours = math.floor(hours)
         local days = math.floor(totalHours / 24)
         local remHours = totalHours % 24
-        return days > 0 and string.format("%dd %dh", days, remHours) or string.format("%dh", totalHours)
+        return days > 0 and string.format("%d%s %d%s", days, L["TIME_UNIT_DAY"], remHours, L["TIME_UNIT_HOUR"]) or string.format("%d%s", totalHours, L["TIME_UNIT_HOUR"])
     else
         local h = math.floor(hours)
         local m = math.floor((seconds % 3600) / 60)
-        return string.format("%dh %dm", h, m)
+        return string.format("%d%s %d%s", h, L["TIME_UNIT_HOUR"], m, L["TIME_UNIT_MINUTE"])
     end
 end
 
@@ -123,7 +123,7 @@ local function FormatTimeTotal(seconds, useYears)
         local days = math.floor(hours / 24)
         local years = math.floor(days / 365)
         local remDays = days % 365
-        return years > 0 and string.format("%dy %dd", years, remDays) or string.format("%dd", days)
+        return years > 0 and string.format("%d%s %d%s", years, L["TIME_UNIT_YEAR"], remDays, L["TIME_UNIT_DAY"]) or string.format("%d%s", days, L["TIME_UNIT_DAY"])
     end
     return FormatTimeSmart(seconds, useYears)
 end
@@ -169,7 +169,7 @@ end
 --------------------------------------------------
 
 local function DebugListCharacters()
-    print("|cffff0000" .. L.DEBUG_HEADER .. "|r")
+    print("|cffff0000" .. L["DEBUG_HEADER"] .. "|r")
     for charKey, data in pairs(AccountPlayedDB) do
         local time, class
         if type(data) == "table" then
@@ -177,6 +177,7 @@ local function DebugListCharacters()
         else
             time, class = data, "UNKNOWN"
         end
+        local displayName = GetLocalizedClass(class)
         print(string.format(" |cffffff00 - %s : %s (%s)|r", charKey, FormatTime(time), class))
     end
 end
@@ -206,7 +207,7 @@ local function CreateRow(parent, width, height)
 
     row.bar = CreateFrame("StatusBar", nil, row)
     row.bar:SetPoint("LEFT", row.classText, "RIGHT", 8, 0)
-    row.bar:SetPoint("RIGHT", row, "RIGHT", -120, 0)
+    row.bar:SetPoint("RIGHT", row, "RIGHT", -140, 0) -- -20px
     row.bar:SetHeight(height - 4)
     row.bar:SetMinMaxValues(0, 1)
     row.bar:SetValue(0)
@@ -218,7 +219,7 @@ local function CreateRow(parent, width, height)
 
     row.valueText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.valueText:SetPoint("LEFT", row.bar, "RIGHT", 8, 0)
-    row.valueText:SetWidth(150)
+    row.valueText:SetWidth(170) -- +20px
     row.valueText:SetJustifyH("LEFT")
 
     row:SetScript("OnEnter", function(self)
@@ -227,7 +228,8 @@ local function CreateRow(parent, width, height)
             local chars = GetCharactersByClass(self.className)
             if #chars > 0 then
                 GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:AddLine(self.className .. " Characters", 1, 1, 1)
+                local localizedName = GetLocalizedClass(self.className)
+                GameTooltip:AddLine(localizedName, 1, 1, 1)
                 GameTooltip:AddLine(" ")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
@@ -236,7 +238,7 @@ local function CreateRow(parent, width, height)
                     GameTooltip:AddDoubleLine(name, timeStr, color.r, color.g, color.b, 1, 1, 1)
                 end
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Click to print in chat", 0.5, 0.5, 0.5)
+                GameTooltip:AddLine(L["CLICK_TO_PRINT"], 0.5, 0.5, 0.5)
                 GameTooltip:Show()
             end
         end
@@ -252,7 +254,8 @@ local function CreateRow(parent, width, height)
             local chars = GetCharactersByClass(self.className)
             if #chars > 0 then
                 PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
-                print("|cff00ff00" .. self.className .. " Characters:|r")
+                local localizedName = GetLocalizedClass(self.className)
+                print("|cff00ff00" .. localizedName .. ":|r")
                 for _, char in ipairs(chars) do
                     local name = char.key:match("%-(.+)$") or char.key
                     local timeStr = FormatTimeDetailed(char.time, AccountPlayedPopupDB.useYears)
@@ -288,7 +291,7 @@ local function CreatePopup()
     if AP.popupFrame then return AP.popupFrame end
 
     -- Load saved size or use defaults
-    local START_W = AccountPlayedPopupDB.width or 520
+    local START_W = AccountPlayedPopupDB.width or 540 -- +20px
     local START_H = AccountPlayedPopupDB.height or 300
     local MIN_W, MIN_H = 420, 200
     local MAX_W, MAX_H = 720, 400
@@ -348,7 +351,7 @@ local function CreatePopup()
 
     f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     f.title:SetPoint("TOP", f, "TOP", 0, -12)
-    f.title:SetText(L.WINDOW_TITLE)
+    f.title:SetText(L["WINDOW_TITLE"])
 
     local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -10, -10)
@@ -417,14 +420,14 @@ local function CreatePopup()
     
     checkBox.text = checkBox:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     checkBox.text:SetPoint("RIGHT", checkBox, "LEFT", -4, 0)
-    checkBox.text:SetText("Years")
+    checkBox.text:SetText(L["USE_YEARS_LABEL"])
     checkBox.text:SetTextColor(0.9, 0.9, 0.9)
     
     checkBox:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_TOP")
-        GameTooltip:AddLine("Time Format", 1, 1, 1)
-        GameTooltip:AddLine("Checked: Years/Days", 0.8, 0.8, 0.8)
-        GameTooltip:AddLine("Unchecked: Hours/Minutes", 0.8, 0.8, 0.8)
+        GameTooltip:AddLine(L["TIME_FORMAT_TITLE"], 1, 1, 1)
+        GameTooltip:AddLine(L["TIME_FORMAT_YEARS"], 0.8, 0.8, 0.8)
+        GameTooltip:AddLine(L["TIME_FORMAT_HOURS"], 0.8, 0.8, 0.8)
         GameTooltip:Show()
     end)
     
@@ -446,11 +449,11 @@ local function CreatePopup()
         local accountTotal = GetAccountTotal()
 
         if accountTotal == 0 then
-            AP.popupRows[1].classText:SetText(L.NO_DATA)
+            AP.popupRows[1].classText:SetText(L["NO_DATA"])
             AP.popupRows[1].bar:SetValue(0)
             AP.popupRows[1].valueText:SetText("")
             AP.popupRows[1]:Show()
-            self.totalRow:SetText(L.TOTAL .. FormatTimeTotal(0, AccountPlayedPopupDB.useYears))
+            self.totalRow:SetText(L["TOTAL"] .. FormatTimeTotal(0, AccountPlayedPopupDB.useYears))
             return
         end
 
@@ -470,7 +473,7 @@ local function CreatePopup()
                 local color = RAID_CLASS_COLORS[entry.class] or { r = 1, g = 1, b = 1 }
 
                 row.className = entry.class
-                row.classText:SetText(entry.class)
+                row.classText:SetText(GetLocalizedClass(entry.class))
                 row.classText:SetTextColor(color.r, color.g, color.b)
                 row.bar:SetValue(barPercent)
                 row.bar:SetStatusBarColor(color.r, color.g, color.b)
@@ -485,7 +488,7 @@ local function CreatePopup()
 
         self.content:SetHeight(#sorted * 22)
         UpdateScrollBarVisibility(self)
-        self.totalRow:SetText(L.TOTAL .. FormatTimeTotal(accountTotal, AccountPlayedPopupDB.useYears))
+        self.totalRow:SetText(L["TOTAL"] .. FormatTimeTotal(accountTotal, AccountPlayedPopupDB.useYears))
     end
 
     f:Hide()
